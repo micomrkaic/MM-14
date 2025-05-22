@@ -1,0 +1,11 @@
+count10 10 0 DO I . LOOP ;
+sqrt 0.5 ^ 
+ln2 ln 2 ln / 
+checkdup dup IF 1 ELSE 0 THEN ;
+nest 1 IF 0 IF 11 ELSE 22 THEN 33 ELSE 44 THEN ;
+sq dup * 
+qu sq sq 
+ml DO I sin . LOOP 
+mml DO I sin LOOP 
+mms DO I sin + LOOP 
+cx cos lstx - 
