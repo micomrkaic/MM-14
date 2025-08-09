@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 #include "globals.h"
 #include "words.h"
 
@@ -56,8 +57,29 @@ void clear_words(void) {
   word_count=0;
 }
 
+static void ensure_config_dir(void) {
+  const char *home = getenv("HOME");
+  if (!home) return; // should never happen on normal UNIX
+
+  char cfgdir[512];
+  snprintf(cfgdir, sizeof(cfgdir), "%s/.config/mm_14", home);
+  mkdir(cfgdir, 0700); // creates if missing, ignores if exists
+}
+
 int save_words_to_file(void) {
-  FILE* f = fopen("user_words.txt", "w");
+  const char *home = getenv("HOME");
+  if (!home) {
+    fprintf(stderr, "HOME not set\n");
+    return -1;
+  }
+
+  // Ensure the config directory exists
+  ensure_config_dir();
+
+  char filepath[512];
+  snprintf(filepath, sizeof(filepath), "%s/.config/mm_14/user_words.txt", home);
+
+  FILE *f = fopen(filepath, "w");
   if (!f) {
     perror("Could not open file for writing");
     return -1;
@@ -71,8 +93,35 @@ int save_words_to_file(void) {
   return 0;
 }
 
+
+/* int save_words_to_file(void) { */
+/*   FILE* f = fopen("user_words.txt", "w"); */
+/*   if (!f) { */
+/*     perror("Could not open file for writing"); */
+/*     return -1; */
+/*   } */
+
+/*   for (int i = 0; i < word_count; i++) { */
+/*     fprintf(f, "%s %s\n", words[i].name, words[i].body); */
+/*   } */
+
+/*   fclose(f); */
+/*   return 0; */
+/* } */
+
 int load_words_from_file(void) {
-  FILE* f = fopen("user_words.txt", "r");
+  const char *home = getenv("HOME");
+  if (!home) {
+    fprintf(stderr, "HOME not set\n");
+    return -1;
+  }
+
+  char filepath[512];
+  snprintf(filepath, sizeof(filepath), "%s/.config/mm_14/user_words.txt", home);
+
+  ensure_config_dir();
+
+  FILE *f = fopen(filepath, "r");
   if (!f) {
     perror("Could not open file for reading");
     return -1;
@@ -93,6 +142,30 @@ int load_words_from_file(void) {
   fclose(f);
   return 0;
 }
+
+
+/* int load_words_from_file(void) { */
+/*   FILE* f = fopen("user_words.txt", "r"); */
+/*   if (!f) { */
+/*     perror("Could not open file for reading"); */
+/*     return -1; */
+/*   } */
+
+/*   word_count = 0; */
+/*   while (word_count < MAX_WORDS && !feof(f)) { */
+/*     char name[MAX_WORD_NAME]; */
+/*     char body[MAX_WORD_BODY]; */
+
+/*     if (fscanf(f, "%31s %[^\n]", name, body) == 2) { */
+/*       strncpy(words[word_count].name, name, MAX_WORD_NAME); */
+/*       strncpy(words[word_count].body, body, MAX_WORD_BODY); */
+/*       word_count++; */
+/*     } */
+/*   } */
+
+/*   fclose(f); */
+/*   return 0; */
+/* } */
 
 UserWord* find_word(const char* name) {
   for (int i = 0; i < word_count; i++) {

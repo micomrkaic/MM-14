@@ -14,7 +14,14 @@
  * You should have received a copy of the GNU General Public License
  * along with MM-14 If not, see <https://www.gnu.org/licenses/>.
  */
-#include <stdio.h>
+
+#include <stdio.h>      // FILE, fprintf, perror, snprintf
+#include <stdlib.h>     // getenv
+#include <string.h>     // snprintf (some libcs), memset
+#include <sys/types.h>  // mode_t (portable mkdir prototype)
+#include <sys/stat.h>   // mkdir
+#include <errno.h>      // errno, EEXIST
+#include <stdbool.h>    // bool, true/false (since you use bool)
 #include "globals.h"
 #include "registers.h"
 #include "stack.h"
@@ -27,31 +34,57 @@ void clear_registers(void) {
   for(int i=0; i < MAX_REGS; i++) reg_used[i]=false;
 }
 
-int save_registers_to_file(void) {
-  FILE* f = fopen("registers.txt", "w");
-  if (!f) {
-    perror("Could not open registers.txt for writing");
-    return -1;
+/* mkdir -p for ~/.config and ~/.config/mm_14 */
+static int ensure_mm14_config_dir(void) {
+  const char *home = getenv("HOME");
+  if (!home || !*home) { fprintf(stderr, "HOME not set\n"); return -1; }
+
+  char p1[512], p2[512];
+  snprintf(p1, sizeof p1, "%s/.config", home);
+  snprintf(p2, sizeof p2, "%s/.config/mm_14", home);
+
+  if (mkdir(p1, 0700) && errno != EEXIST) { perror("mkdir ~/.config"); return -1; }
+  if (mkdir(p2, 0700) && errno != EEXIST) { perror("mkdir ~/.config/mm_14"); return -1; }
+  return 0;
+}
+
+/* Build ~/.config/mm_14/<filename> into out */
+static int get_mm14_config_path(const char *filename, char *out, size_t outsz) {
+  const char *home = getenv("HOME");
+  if (!home || !*home) { fprintf(stderr, "HOME not set\n"); return -1; }
+  if (snprintf(out, outsz, "%s/.config/mm_14/%s", home, filename) >= (int)outsz) {
+    fprintf(stderr, "Path too long\n"); return -1;
   }
+  return 0;
+}
+
+int save_registers_to_file(void) {
+  if (ensure_mm14_config_dir() != 0) return -1;
+
+  char path[512];
+  if (get_mm14_config_path("registers.txt", path, sizeof path) != 0) return -1;
+
+  FILE *f = fopen(path, "w");
+  if (!f) { perror("open for write registers.txt"); return -1; }
 
   for (int i = 0; i < MAX_REGS; i++) {
     if (reg_used[i]) {
+      /* 17 sig figs prints a double round-trip safe */
       fprintf(f, "%d %.*g\n", i, 17, registers[i]);
     }
   }
-
   fclose(f);
   return 0;
 }
 
 int load_registers_from_file(void) {
-  FILE* f = fopen("registers.txt", "r");
-  if (!f) {
-    perror("Could not open registers.txt for reading");
-    return -1;
-  }
+  char path[512];
+  if (get_mm14_config_path("registers.txt", path, sizeof path) != 0) return -1;
 
-  // Clear all registers first
+  FILE *f = fopen(path, "r");
+  if (!f) { perror("open for read registers.txt"); return -1; }
+
+  /* Clear all registers first */
   for (int i = 0; i < MAX_REGS; i++) {
     reg_used[i] = false;
     registers[i] = 0.0;
@@ -59,17 +92,14 @@ int load_registers_from_file(void) {
 
   int reg;
   double val;
-
-  while (fscanf(f, " %d %lf", &reg, &val) == 2) {
-    if (reg >= 0 && reg <= MAX_REGS) {
-      int idx = reg;
-      registers[idx] = val;
-      reg_used[idx] = true;
+  while (fscanf(f, "%d %lf", &reg, &val) == 2) {
+    if (reg >= 0 && reg < MAX_REGS) {
+      registers[reg] = val;
+      reg_used[reg] = true;
     } else {
       fprintf(stderr, "Invalid register number: %d\n", reg);
     }
   }
-
   fclose(f);
   return 0;
 }

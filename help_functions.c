@@ -19,29 +19,39 @@
 
 void help_screen(void) {
   printf("Type help for help; q or ctrl-d to quit. All input is case sensitive.\n");
-  printf("Basic principles\n");
+
+  printf("\033[1;4mBasic principles\033[0m\n");
   printf("    The calculator is stack based and operates using RPN.\n");
   printf("    Sole limited programmability is possible.\n");
-  printf("Math functionality\n");
+
+  printf("\033[1;4mMath functionality\033[0m\n");
   printf("    number followed by Enter pushes a number onto the stack.\n");
   printf("    + - * / abs inv chs %% %%chg frac int\n");
   printf("    sin cos tan asin acos atan sinh cosh tanh asinh acosh atanh\n");
   printf("    ln log exp ^ pow integrate fzero\n");
-  printf("Sample statistics and basic probability\n");
+
+  printf("\033[1;4mSample statistics and basic probability\033[0m\n");
   printf("    s+ s- clstat getstats npdf ncdf nqnt\n");
-  printf("Stack operations\n");
+
+  printf("\033[1;4mStack operations\033[0m\n");
   printf("    clst dup drop swap nip tuck roll lstx lsty stacksize stacksum stacksumsq\n");
-  printf("Tests and logic\n");
+
+  printf("\033[1;4mTests and logic\033[0m\n");
   printf("    == <= >= != < > && || !\n");
-  printf("Register operations\n");
+
+  printf("\033[1;4mRegister operations\033[0m\n");
   printf("    sto rcl sto+ sto- sto* sto regidx listregs clrg loadregs saveregs\n");
-  printf("Uder defined words\n");
+
+  printf("\033[1;4mUser defined words\033[0m\n");
   printf("    listwords clearwords delword savewords loadwords\n");
-  printf("Program controls\n");
+
+  printf("\033[1;4mProgram controls\033[0m\n");
   printf("    u [undo] p_prec {1-9} [print precision]\n");
   printf("    int_prec [integration precision] internals\n");
   printf("    f0_prec [fsolve precision] word_sel [user word selection]\n");
-  printf("    sss [stats on<->off] spf [SCI<->ENG]\n");
+  printf("    sss [stats on <--> off] spf [SCI<-->ENG]\n");
+  printf("    swapterm [big screen/GUI<-->small screen]\n");
+
   printf("\n");
 }
 
