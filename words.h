@@ -18,7 +18,7 @@
 #define WORDS_H
 
 #define MAX_WORDS 32
-#define MAX_WORD_NAME 16
+#define MAX_WORD_NAME 32
 #define MAX_WORD_BODY 1024
 
 #include "stack.h"
