@@ -1,0 +1,40 @@
+# Makefile for mm-14 project with math and readline libraries
+
+CC = gcc
+CFLAGS = -g -Wall -Wextra -Werror -std=c17
+LDFLAGS = -lm -lreadline
+TARGET = mm_14
+
+SRC = main.c my_math.c stack_printing.c stack.c globals.c my_statistics.c words.c help_functions.c registers.c util_func.c tab_complete.c tokenizer.c interpreter.c
+OBJ = $(SRC:.c=.o)
+
+# ----- Installation paths (override on the command line if you want) -----
+HOME ?= $(shell printf %s "$$HOME")
+XDG_CONFIG_HOME ?= $(HOME)/.config
+CONFIG_DIR ?= $(XDG_CONFIG_HOME)/mm_14
+BINDIR ?= $(HOME)/.local/bin
+CONFIG_FILES = registers.txt user_words.txt
+# ------------------------------------------------------------------------
+
+.PHONY: all clean install
+
+all: $(TARGET)
+
+$(TARGET): $(OBJ)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) $(LDFLAGS)
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+install: $(TARGET)
+	mkdir -p "$(CONFIG_DIR)"
+	cp -f $(CONFIG_FILES) "$(CONFIG_DIR)/"
+	mkdir -p "$(BINDIR)"
+	ln -sf "$(abspath $(TARGET))" "$(BINDIR)/$(TARGET)"
+	@echo "Installed $(TARGET) -> $(BINDIR)/$(TARGET)"
+	@echo "Config copied to $(CONFIG_DIR)"
+	@command -v $(TARGET) >/dev/null 2>&1 || echo "Note: ensure $(BINDIR) is in your PATH"
+
+clean:
+	rm -f $(TARGET) $(OBJ)
+
