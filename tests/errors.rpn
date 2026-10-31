@@ -1,0 +1,18 @@
+\ Errors leave the stack exactly as it was before the failing token,
+\ and the rest of the line is skipped.
+all
+5 0 / 99
+.s
+clst 1 inv 0 inv
+.s
+clst -1 sqrt
+-1 ln
+0 ln
+1e999
++
+nan inf 0x10
+foo
+clst 3 drop drop
+.s
+1 2 3 ; 4
+.s

@@ -14,7 +14,6 @@
  * You should have received a copy of the GNU General Public License
  * along with MM-14 If not, see <https://www.gnu.org/licenses/>.
  */
-#include <stdio.h>
 #include <string.h>
 #include "tokenizer.h"
 
@@ -36,28 +35,5 @@ char *next_token(Tokenizer *t) {
     *t->current = '\0';
     t->current++;
   }
-
   return start;
 }
-
-void tokenize_and_process(char *line, int depth) {
-  if (depth > MAX_RECURSION_DEPTH) {
-    printf("!!! Max recursion depth (%d) reached. Aborting.\n", MAX_RECURSION_DEPTH);
-    return;
-  }
-
-  Tokenizer tok = make_tokenizer(line, " ");
-  char *token;
-
-  while ((token = next_token(&tok))) {
-    printf("Token (depth %d): %s\n", depth, token);
-
-    if (strcmp(token, "recurse") == 0) {
-      char nested[] = "a b recurse c";
-      printf(">>> Entering recursion (depth %d)\n", depth + 1);
-      tokenize_and_process(nested, depth + 1);
-      printf("<<< Returning from recursion (depth %d)\n", depth + 1);
-    }
-  }
-}
-

@@ -14,88 +14,51 @@
  * You should have received a copy of the GNU General Public License
  * along with MM-14 If not, see <https://www.gnu.org/licenses/>.
  */
-//#define _POSIX_C_SOURCE 200809L
-#include <stdlib.h>
-#include <stdio.h>
+#include <errno.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include "state.h"
 #include "util_func.h"
 
-// Check if string is a number
-bool isNumber(const char *str) {
-  if (!str || *str == '\0') return false;
-  char *endptr;
-
-  // Check for integer first
-  strtol(str, &endptr, 10);
-  if (*endptr == '\0') return true;
-
-  // Check for valid float (including scientific notation)
-  strtod(str, &endptr);
-  if (*endptr == '\0') return true;
-  return false;
+NumParse parse_number(const char *s, double *out) {
+  if (!s || !*s) return NUM_NO;
+  if (strspn(s, "0123456789+-.eE") != strlen(s)) return NUM_NO;
+  if (!strpbrk(s, "0123456789")) return NUM_NO;
+  char *end;
+  double v = strtod(s, &end);
+  if (end == s || *end != '\0') return NUM_NO;
+  if (!isfinite(v)) return NUM_RANGE;
+  if (out) *out = v;
+  return NUM_OK;
 }
 
-double safe_div(double a, double b) {
-  if (b == 0.0) {
-    printf("Error: Division by zero!\n");
-    return 0.0;
-  }
-  return a / b;
+static int mkdir_if_missing(const char *p) {
+  if (mkdir(p, 0700) != 0 && errno != EEXIST)
+    return rpn_err("Cannot create %s: %s", p, strerror(errno));
+  return RPN_OK;
 }
 
-double safe_ln(double a)
-{
-  if (a <= 0) {
-    printf("Error: ln of non-positive number!\n");
-    return 0;
-  }
-  return log(a); 
-}
-
-double safe_log10(double a)
-{
-  if (a <= 0) {
-    printf("Error: log of non-positive number!\n");
-    return 0.0;
-  }
-  return log10(a);
-}
-
-double safe_frac(double a)
-{
-  double intpart;
-  return modf(a, &intpart);
-}
-
-double safe_int(double a)
-{
-  double intpart;
-  modf(a, &intpart);
-  return intpart;
-}
-
-void set_disp_precision(Stack* stack)
-{
-  if (stack->top < 0) {
-    printf("Error: stack underflow — no value for precision\n");
-    return;
-  }
-  double val = pop(stack);
-  // Check if val is a valid integer precision 0–9
-  if (val >= 0 && val <= 9 && floor(val) == val) {
-    precision = (int)val;
-    printf("Precision set to %d decimal places\n", precision);
+int config_path(const char *file, char *out, size_t outsz, bool create) {
+  char base[1024];
+  const char *xdg = getenv("XDG_CONFIG_HOME");
+  if (xdg && *xdg) {
+    snprintf(base, sizeof base, "%s", xdg);
   } else {
-    printf("Invalid precision value (must be integer from 0 to 9)\n");
+    const char *home = getenv("HOME");
+    if (!home || !*home) return rpn_err("HOME is not set");
+    snprintf(base, sizeof base, "%s/.config", home);
   }
-  return;
-}
-void print_internals(void) {
-  printf(" **** Control variables ****\n");
-  printf("Print precision:%d\n",  precision);
-  printf("Storage register address: %d\n",reg_idx);
-  printf("Integration tolerance: %g\n",intg_tolerance);
-  printf("Fsolve tolerance: %g\n",fsolve_tolerance);
-  printf("Number of function to analyze:%d\n",intg_function);
-  printf("\n");
+  if (create) {
+    char dir[1100];
+    snprintf(dir, sizeof dir, "%s/mm_14", base);
+    TRY(mkdir_if_missing(base));
+    TRY(mkdir_if_missing(dir));
+  }
+  if ((size_t)snprintf(out, outsz, "%s/mm_14/%s", base, file) >= outsz)
+    return rpn_err("Config path too long");
+  return RPN_OK;
 }

@@ -17,13 +17,7 @@
 #ifndef TAB_COMPLETE_H
 #define TAB_COMPLETE_H
 
-// Include required headers
-#include <stdio.h>
-#include <string.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+/* Install readline completion over built-ins and user words. */
+void completion_init(void);
 
-// Function declarations
-char **rpn_completion(const char *text, int start, int end);
-
-#endif // TAB_COMPLETE_H
+#endif

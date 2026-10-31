@@ -1,0 +1,26 @@
+27.000000
+81.000000
+   0  sq2              dup dup * *
+   1  cube             dup sq2 *
+: cube dup sq2 * ;
+  rot   ( a b c -- b c a )   rotate the third item to the top  [Stack]
+Error: bad: undefined word 'frobnicate'
+Error: see: unknown word 'bad'
+Error: Recursion deeper than 256 levels (in 'forever')
+  (in word 'forever')
+5.000000
+Error: '42' is a number, not a valid name
+Error: 'dup' is a built-in command
+Error: 'if' is a built-in command
+   0  sq2              dup dup * *
+   1  cube             dup sq2 *
+   2  forever          forever
+   3  hyp              sq swap sq + sqrt
+   0  sq2              dup dup * *
+   1  forever          forever
+   2  hyp              sq swap sq + sqrt
+Error: delword: argument must be an integer in 0..2
+3.000000
+5.000000
+9.000000
+[exit 1]

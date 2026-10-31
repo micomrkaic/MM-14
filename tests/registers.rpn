@@ -1,0 +1,18 @@
+all
+listregs
+rcl
+3 regidx 2.5 sto .
+rcl rcl + .
+4 sto+ drop rcl .
+2 sto* drop rcl .
+4 sto- drop rcl .
+0 sto/
+rcl .
+7 regidx 10 sto drop
+listregs
+100 regidx
+-1 regidx
+2.5 regidx
+\ register changes are undoable
+clrg listregs
+u listregs

@@ -1,0 +1,22 @@
+  (no registers in use; current index 0)
+Error: Register 0 is empty
+2.5
+5
+6.5
+13
+9
+Error: sto/: division by zero
+9
+  R3    9
+  R7  * 10
+Error: regidx: register index must be an integer 0..99
+Error: regidx: register index must be an integer 0..99
+Error: regidx: register index must be an integer 0..99
+  (no registers in use; current index 7)
+  R3    9
+  R7  * 10
+0
+100
+-1
+2.5
+[exit 1]

@@ -1,0 +1,33 @@
+5
+5
+-1
+0
+1
+3628800
+5050
+0
+1
+10
+11
+20
+21
+10
+7
+4
+1
+0
+128
+5
+Error: e1: unterminated 'if'
+Error: e2: 'then' without matching 'if'
+Error: e3: 'i' used outside a do loop
+Error: e4: 'j' needs two nested do loops
+Error: e5: 'repeat' without matching 'while'
+Error: e6: 'loop' without matching 'do'
+Error: e7: conditional needs a flag on the stack
+  (in word 'e7')
+  (empty)
+Error: (top level): unterminated 'if'
+Error: Division by zero
+  (in word 'partial')
+[exit 1]

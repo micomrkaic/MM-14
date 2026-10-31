@@ -1,0 +1,11 @@
+\ Batch output uses the display mode, so this checks the formatter
+1234.5678 .
+1e13 .
+1e-9 .
+-0 .
+3 p 2 3 / .
+sci 2 3 / .
+eng 12345.678 . 0.00012345 . 999999.9996 . -4.5e-7 . 0 .
+all 0.1 0.2 + .
+fix 0 p 2.5 . 3.5 .
+16 p

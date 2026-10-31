@@ -14,61 +14,57 @@
  * You should have received a copy of the GNU General Public License
  * along with MM-14 If not, see <https://www.gnu.org/licenses/>.
  */
-#include <stdio.h>
 #include <math.h>
-#include "globals.h"
+#include <string.h>
+#include "my_statistics.h"
 
-// Functions for statistical registers
-void sigma_clear(void)
-{
-  for (int i = 0; i < 6; i++) {
-    Reg_stat_in[i] = 0.0;
-    Reg_stat_out[i] = 0.0;
-  }
+void sigma_clear(Sigma *g) {
+  memset(g, 0, sizeof *g);
 }
 
-double sigma_plus(double x, double y) {
-  Reg_stat_in[1]+=x;
-  Reg_stat_in[2]+=x*x;
-  Reg_stat_in[3]+=y;
-  Reg_stat_in[4]+=y*y;
-  Reg_stat_in[5]+=x*y;
-  return Reg_stat_in[0]+=1;
+/* Welford's online update; numerically stable, no catastrophic cancellation. */
+void sigma_add(Sigma *g, double x, double y) {
+  g->n += 1.0;
+  double dx = x - g->mx;
+  g->mx += dx / g->n;
+  double dy = y - g->my;
+  g->my += dy / g->n;
+  g->m2x += dx * (x - g->mx);
+  g->m2y += dy * (y - g->my);
+  g->cxy += dx * (y - g->my);
 }
 
-double sigma_minus(double x, double y) {
-  if (Reg_stat_in[0] > 0) {
-    Reg_stat_in[1]-=x;
-    Reg_stat_in[2]-=x*x;
-    Reg_stat_in[3]-=y;
-    Reg_stat_in[4]-=y*y;
-    Reg_stat_in[5]-=x*y;
-    Reg_stat_in[0]--;
-    return Reg_stat_in[0]-=1;
-  } else return 0.0;
+/* Exact inverse of sigma_add. */
+int sigma_remove(Sigma *g, double x, double y) {
+  if (g->n < 1.0) return rpn_err("s-: statistics registers are empty");
+  if (g->n == 1.0) { sigma_clear(g); return RPN_OK; }
+  double n1 = g->n - 1.0;
+  double mx_new = g->mx - (x - g->mx) / n1;
+  double my_new = g->my - (y - g->my) / n1;
+  g->m2x -= (x - mx_new) * (x - g->mx);
+  g->m2y -= (y - my_new) * (y - g->my);
+  g->cxy -= (x - mx_new) * (y - g->my);
+  if (g->m2x < 0.0) g->m2x = 0.0;
+  if (g->m2y < 0.0) g->m2y = 0.0;
+  g->mx = mx_new;
+  g->my = my_new;
+  g->n = n1;
+  return RPN_OK;
 }
 
-// Print the statistics
-void sigma_evaluate(void) {
-  if (Reg_stat_in[0] > 0) {
-    double n = Reg_stat_in[0];
-    double x_bar = Reg_stat_in[1]/n;
-    double y_bar = Reg_stat_in[3]/n;
-    double xy_bar = Reg_stat_in[5]/n;
-    double x2_bar = Reg_stat_in[2]/n;
-    double y2_bar = Reg_stat_in[4]/n;
-
-    double std_x=sqrt(x2_bar-x_bar*x_bar);
-    double std_y=sqrt(y2_bar-y_bar*y_bar);
-    double rho = (xy_bar-x_bar*y_bar)/(std_x*std_y);
-
-    Reg_stat_out[0]=n;
-    Reg_stat_out[1]=x_bar;
-    Reg_stat_out[2]=y_bar;
-    Reg_stat_out[3]=std_x;
-    Reg_stat_out[4]=std_y;
-    Reg_stat_out[5]=rho;
-    
-  } else printf("No entries in statistical registers!\n");
+void sigma_derive(const Sigma *g, SigmaOut *o) {
+  double n = g->n;
+  o->n   = n;
+  o->sx  = n * g->mx;
+  o->sy  = n * g->my;
+  o->sx2 = g->m2x + n * g->mx * g->mx;
+  o->sy2 = g->m2y + n * g->my * g->my;
+  o->sxy = g->cxy + n * g->mx * g->my;
+  o->mx  = n >= 1.0 ? g->mx : NAN;
+  o->my  = n >= 1.0 ? g->my : NAN;
+  o->sdx = n >= 2.0 ? sqrt(g->m2x / (n - 1.0)) : NAN;
+  o->sdy = n >= 2.0 ? sqrt(g->m2y / (n - 1.0)) : NAN;
+  o->r   = (n >= 2.0 && g->m2x > 0.0 && g->m2y > 0.0) ? g->cxy / sqrt(g->m2x * g->m2y) : NAN;
+  o->b   = (n >= 2.0 && g->m2x > 0.0) ? g->cxy / g->m2x : NAN;
+  o->a   = isnan(o->b) ? NAN : g->my - o->b * g->mx;
 }
-

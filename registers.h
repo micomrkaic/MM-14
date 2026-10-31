@@ -18,22 +18,16 @@
 #define REGISTERS_H
 
 #include <stdbool.h>
-#include "stack.h"
+#include "state.h"
 
-#define MAX_REGS 64
-extern double registers[MAX_REGS];
-extern bool reg_used[MAX_REGS];  // track which registers are initialized
+typedef enum { REG_STO, REG_ADD, REG_SUB, REG_MUL, REG_DIV } RegOp;
 
-void clear_registers(void);
-int save_registers_to_file(void);
-int load_registers_from_file(void);
-void list_registers(void);
-void top_to_register(Stack *stack);
-void register_plus_top(Stack *stack);
-void register_minus_top(Stack *stack);
-void register_times_top(Stack *stack);
-void register_divided_by_top(Stack *stack);
-void register_to_top(Stack *stack);
-void set_reg_index(Stack* stack);
+int  reg_store(State *s, RegOp op);   /* register[reg_idx] op= X; X stays */
+int  reg_recall(State *s);
+int  reg_select(State *s);            /* pops index */
+void reg_clear(State *s);
+void reg_list(const State *s);
+int  reg_save(const State *s);
+int  reg_load(State *s, bool quiet_if_missing);
 
-#endif // REGISTERS_H
+#endif

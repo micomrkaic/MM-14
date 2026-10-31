@@ -18,15 +18,15 @@
 #define UTIL_FUNC_H
 
 #include <stdbool.h>
-#include "stack.h"
-#include "globals.h"
+#include <stddef.h>
 
-bool isNumber(const char *str);
-double safe_div(double a, double b);
-double safe_ln(double a);
-double safe_log10(double a);
-double safe_frac(double a);
-double safe_int(double a);
-void set_disp_precision(Stack* stack);
-void print_internals(void);
-#endif // UTIL_FUNC_H
+typedef enum { NUM_NO = 0, NUM_OK = 1, NUM_RANGE = -1 } NumParse;
+
+/* Decimal literals only: digits, sign, '.', exponent. No nan/inf/hex. */
+NumParse parse_number(const char *s, double *out);
+
+/* $XDG_CONFIG_HOME/mm_14/<file>, falling back to ~/.config/mm_14/<file>.
+   With create=true the directory is made if missing. */
+int config_path(const char *file, char *out, size_t outsz, bool create);
+
+#endif

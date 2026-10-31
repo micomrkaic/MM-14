@@ -17,12 +17,19 @@
 #ifndef STACK_PRINTING_H
 #define STACK_PRINTING_H
 
-#include "stack.h"
-#include "globals.h"
+#include <stddef.h>
+#include "state.h"
 
-#define TERM_WIDTH 90
+/* Format according to cfg (FIX/SCI/ENG/ALL, precision). Never overflows buf. */
+void fmt_num(char *buf, size_t n, double x);
 
-void printStack_small_terminal(Stack* s, int precision, char* stack_title);
-void printStack_big_terminal(Stack* s, int precision);
-void printStack(Stack* s, int precision, char* stack_title);
-#endif // STACK_PRINTING_H
+/* Full display after each interactive line (big or compact, plus status line). */
+void print_stack(const State *s);
+
+/* One value per line, deepest first (".s" and batch output). */
+void print_stack_plain(const State *s);
+
+/* Display width of a UTF-8 string (all our labels are single-width). */
+size_t utf8_width(const char *s);
+
+#endif

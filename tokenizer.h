@@ -17,7 +17,7 @@
 #ifndef TOKENIZER_H
 #define TOKENIZER_H
 
-#define MAX_RECURSION_DEPTH 8
+#define WHITESPACE " \t\r\n"
 
 typedef struct {
   char *input;
@@ -25,8 +25,8 @@ typedef struct {
   const char *delim;
 } Tokenizer;
 
+/* Reentrant strtok replacement; modifies input in place. */
 Tokenizer make_tokenizer(char *input, const char *delim);
 char *next_token(Tokenizer *t);
-void tokenize_and_process(char *line, int depth);
 
-#endif // TOKENIZER_H
+#endif

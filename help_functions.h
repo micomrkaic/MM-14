@@ -17,9 +17,10 @@
 #ifndef HELP_FUNCTIONS_H
 #define HELP_FUNCTIONS_H
 
-
-void help_screen(void);
+/* All generated from the ops[] table. */
 void splash_screen(void);
+void help_screen(void);
+void describe_op(int idx);
+void print_commands_markdown(void);
 
-
-#endif // HELP_FUNCTIONS_H
+#endif

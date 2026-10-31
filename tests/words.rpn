@@ -1,0 +1,31 @@
+: sq2 dup * ;
+: cube dup sq2 * ;
+3 cube .
+\ redefinition replaces the old definition (and callers see it)
+: sq2 dup dup * * ;
+3 cube .
+listwords
+see cube
+see rot
+\ undefined words are caught at definition time
+: bad 1 frobnicate + ;
+see bad
+\ self-recursion is allowed; runaway recursion is stopped
+: forever forever ;
+forever
+\ multi-line definition with comments
+: hyp ( a b -- c )
+  sq swap sq +   \ sum of squares
+  sqrt ;
+3 4 hyp .
+\ names that are not allowed
+: 42 1 ;
+: dup 1 ;
+: if 1 ;
+\ delete by index
+listwords
+1 delword listwords
+9 delword
+\ unterminated comment and a lone semicolon
+1 2 + . ( this comment
+continues ) 5 .

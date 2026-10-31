@@ -1,0 +1,295 @@
+.TH MM_14 1 "October 2026" "MM-14 2.0" "User Commands"
+.SH NAME
+mm_14 \- RPN calculator with numerical methods, in the HP-15C tradition
+.SH SYNOPSIS
+.B mm_14
+.RB [ \-n ]
+.RB [ \-e
+.IR EXPR ]...
+.RB [ \-f
+.IR FILE ]...
+.br
+.B mm_14
+.BR \-\-commands " | " \-\-version " | " \-h
+.SH DESCRIPTION
+.B mm_14
+is a reverse Polish notation calculator for the terminal. It keeps a
+stack of real numbers, 100 storage registers and HP-style statistics
+registers, lets the user define new words in a small Forth-like language
+with conditionals and loops, and applies numerical methods (integration,
+root finding, minimisation, differentiation, sums) to those words.
+.PP
+With no arguments and a terminal on standard input it runs interactively
+with GNU readline editing, history and tab completion. The stack is
+redrawn after every line. Otherwise it runs in batch mode: it evaluates
+the given expressions and files, or standard input, prints the final stack
+one value per line, and exits with status 1 if any error occurred.
+.PP
+Input is a sequence of whitespace-separated tokens. A token that parses
+as a decimal number is pushed; anything else is looked up first among the
+built-in commands and then among user words. All input is case sensitive.
+.SH OPTIONS
+.TP
+.BI \-e " EXPR"
+Evaluate
+.I EXPR
+as one line of input. May be repeated; expressions run in order.
+.TP
+.BI \-f " FILE"
+Run the lines of
+.IR FILE .
+.B \-
+means standard input. May be repeated and mixed with
+.BR \-e .
+.TP
+.B \-n
+Do not autoload the saved words and registers at startup.
+.TP
+.B \-\-commands
+Print the complete command reference as Markdown and exit. This is how
+.B COMMANDS.md
+is generated.
+.TP
+.B \-\-version
+Print the version and exit.
+.TP
+.BR \-h ", " \-\-help
+Print usage and exit.
+.SH STACK
+The bottom four levels are labelled
+.BR X ", " Y ", " Z " and " T
+as on the HP; deeper levels show their depth.
+.BR pick " and " roll
+use the same numbering: 0 is X, so
+.B "0 pick"
+is
+.BR dup ,
+.B "1 roll"
+is
+.B swap
+and
+.B "2 roll"
+is
+.BR rot .
+.PP
+Stack pictures in the help read left to right, deepest first:
+.B "y x -- y+x"
+means Y and X are consumed and the sum is left in X.
+.SH ERRORS AND UNDO
+Each top-level token is atomic. If it fails, the stack, last x/y,
+registers and statistics are restored to their state before that token,
+the error is printed on standard error and the rest of the line is
+skipped. A user word counts as one token, so a word that fails half-way
+leaves no trace.
+.PP
+.B u
+undoes the last change; up to 64 levels are kept. Display settings and
+word definitions are not part of undo.
+.SH COMMANDS
+The full list, with stack pictures, is printed by
+.B help
+inside the calculator and by
+.BR "mm_14 \-\-commands" .
+.B see
+.I name
+describes one command or shows a user word's definition. By category:
+.TP
+.B Arithmetic
++ \- * / ^ pow chs abs inv sq sqrt cbrt % %t %chg mod int frac floor
+ceil round sign min max gcd lcm fact gamma lgamma ncr npr
+.TP
+.B Exp/Log
+exp ln 10^x log log2
+.TP
+.B Trigonometry
+sin cos tan asin acos atan atan2 hypot sinh cosh tanh asinh acosh atanh
+deg rad grad >deg >rad >p >r >hms >h
+.TP
+.B Constants
+pi e rand seed
+.TP
+.B Probability
+npdf ncdf nqnt tpdf tcdf tqnt chipdf chicdf chiqnt fpdf fcdf fqnt
+.TP
+.B Logic
+== != < <= > >= && || !
+.TP
+.B Stack
+dup drop swap over rot \-rot nip tuck pick roll depth 2dup 2drop clx
+clst lstx lsty stacksize stacksum stacksumsq stackmean stackmax stackmin
+stack>stat
+.TP
+.B Registers
+regidx sto sto+ sto\- sto* sto/ rcl listregs clrg saveregs loadregs
+.TP
+.B Statistics
+s+ s\- clstat statscalc mean sdev corr lr yhat xhat
+.TP
+.B Numerics
+\(aq exec integrate romberg fzero solve minimize deriv fsum fprod tol
+nevals interr
+.TP
+.B Display
+p fix sci eng all spf sss swapterm . .s
+.TP
+.B Words
+: ; see listwords delword clearwords savewords loadwords ( \\
+.TP
+.B Control
+if else then begin until while repeat do loop +loop i j
+.TP
+.B Session
+u internals help q
+.SS Percent
+.B %
+computes y*x/100,
+.B %t
+computes 100*x/y and
+.B %chg
+computes 100*(x\-y)/y. All three leave Y in place, as on the HP.
+.SS Registers
+.B n regidx
+selects register
+.I n
+(0\-99). Then
+.BR sto ", " sto+ ", " sto\- ", " sto* ", " sto/
+and
+.B rcl
+act on it.
+.B sto
+leaves X on the stack.
+.SS Statistics
+.B s+
+takes x from X and y from Y and pushes the count;
+.B s\-
+removes a pair exactly. Standard deviations are sample values (n\-1).
+.B lr
+leaves the slope in Y and the intercept in X;
+.BR yhat " and " xhat
+evaluate the regression line.
+.SS Angles
+.BR deg ", " rad " and " grad
+set the angle mode. In degrees and grads, multiples of a quarter turn
+give exact results.
+.BR >p " and " >r
+convert between rectangular and polar coordinates;
+.BR >hms " and " >h
+between decimal hours and H.MMSS.
+.SS Display
+.BR fix ", " sci ", " eng " (exponent a multiple of 3) and " all
+(15 significant digits) select the format;
+.B n p
+sets the number of digits (0\-15). FIX falls back to SCI when a value
+does not fit.
+.SH NUMERICAL METHODS
+A function is a word (or built-in) that maps X to f(X), leaving exactly
+one value.
+.B \(aq name
+pushes its execution token; the numerical words consume that token:
+.nf
+a b \(aq f integrate     integral over [a,b] (tanh-sinh, bisecting where needed)
+a b \(aq f romberg       the same by Romberg extrapolation
+a b \(aq f fzero         root in a bracket with a sign change (Brent)
+g   \(aq f solve         root near one guess (bracket search, then Brent)
+a b \(aq f minimize      argument of the minimum in [a,b] (Brent)
+x   \(aq f deriv         f\(aq(x) (Ridders\(aq extrapolation)
+lo hi \(aq f fsum        sum of f(i) for integers lo..hi
+lo hi \(aq f fprod       product of f(i)
+\(aq f exec             run f
+.fi
+.PP
+.B x tol
+sets the tolerance (default 1e-10, relative to max(1,|result|)).
+.B nevals
+gives the number of function evaluations of the last call,
+.B interr
+the error estimate of the last integral, and
+.B internals
+shows the current settings. Functions run on the live stack and may use
+registers and other words; an error inside one aborts the call and the
+stack rolls back; Ctrl-C interrupts.
+.PP
+An integrable singularity at an endpoint converges to full precision when
+that endpoint is 0; elsewhere the result is good to about 1e-8 and a
+warning is printed. Shift the variable if that matters.
+.PP
+.nf
+: f dup * 2 \- ;    0 3 \(aq f fzero      \e" sqrt 2
+: g 1 + inv ;       0 1 \(aq g integrate  \e" ln 2
+0 pi \(aq sin integrate                  \e" 2
+.fi
+.SH USER WORDS
+.nf
+: name body ;      \e" may span several lines
+( comment )        \e" needs spaces around the parentheses
+\e comment          \e" to end of line
+.fi
+.PP
+A word is compiled when it is defined, so an unknown name in the body is
+reported immediately. Calls are resolved by name at run time, so
+redefining a word also changes its callers. A word may call itself;
+recursion stops at 256 levels and Ctrl-C interrupts a running word.
+.PP
+Control flow works inside definitions and at top level, where the rest of
+the line is compiled and run as one unit. The 1.x spellings
+.BR DO ", " LOOP ", " IF ", " ELSE ", " THEN " and " I
+are accepted:
+.nf
+flag if ... [else ...] then
+begin ... flag until
+begin ... flag while ... repeat
+limit start do ... i ... loop      \e" skipped when start = limit
+limit start do ... n +loop         \e" n < 0 counts down to limit
+.fi
+.B i
+is the innermost loop index and
+.B j
+the next outer one.
+.PP
+.nf
+: fac  dup 1 > if dup 1 \- fac * then ;
+: sum  ( n \-\- 1+..+n ) 0 swap 1 + 1 do i + loop ;
+.fi
+.SH FILES
+.TP
+.I $XDG_CONFIG_HOME/mm_14/words.txt
+Saved words, one per line: name followed by body. Loaded at startup
+unless
+.B \-n
+is given. A 1.x
+.I user_words.txt
+is read when this file does not exist.
+.TP
+.I $XDG_CONFIG_HOME/mm_14/registers.txt
+Saved registers: index and value per line.
+.TP
+.I $XDG_CONFIG_HOME/mm_14/history
+Readline history, last 1000 lines.
+.PP
+.I $XDG_CONFIG_HOME
+defaults to
+.IR ~/.config .
+Saves write a temporary file and rename it, so an interrupted save does
+not damage the previous file.
+.SH EXIT STATUS
+0 on success. In batch mode, 1 if any error was reported, 2 for a usage
+error.
+.SH EXAMPLES
+.nf
+$ mm_14 \-e "2 10 ^"
+1024.000000
+$ echo "all 1 3 /" | mm_14
+0.333333333333333
+$ mm_14 \-n \-e ": f dup * 2 - ; 0 3 ' f fzero"
+1.414214
+$ mm_14 \-f script.rpn
+.fi
+.SH SEE ALSO
+.BR readline (3).
+The command reference
+.B COMMANDS.md
+and the change log are installed in
+.IR PREFIX/share/doc/mm_14 .
+.SH AUTHOR
+Mico Mrkaic. Licensed under the GNU General Public License, version 3 or
+later.

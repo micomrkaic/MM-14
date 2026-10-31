@@ -1,0 +1,56 @@
+\ Numerical methods take an execution token from ' name.
+all
+: sq2 dup * ;
+0 2 ' sq2 integrate .
+0 pi ' sin integrate .
+0 1 ' exp romberg .
+\ endpoint singularity at 0: exact
+: rsqrt sqrt inv ;
+0 1 ' rsqrt integrate .
+\ reversed limits change the sign; equal limits give 0
+2 0 ' sq2 integrate . 1 1 ' sq2 integrate .
+\ a narrow interior peak forces adaptive bisection: 2*1000*atan(1000)
+: peak 1 - dup * 1e-6 + inv ;
+0 2 ' peak integrate 3139.59265425627 - abs 1e-8 < .
+\ roots
+: f2 dup * 2 - ;
+0 3 ' f2 fzero .
+1 ' f2 solve .
+-1 ' f2 solve .
+: lin 3 * 7 - ;
+100 ' lin solve .
+\ no sign change in the bracket
+1 2 ' f2 fzero
+\ minimum of (x-3)^2 + 1 on [0,5]
+: par 3 - dup * 1 + ;
+0 5 ' par minimize 3 - abs 1e-6 < .
+\ derivatives
+2 ' exp deriv 2 exp - abs 1e-9 < .
+1 ' sin deriv 1 cos - abs 1e-9 < .
+\ sums and products
+: invsq dup * inv ;
+1 1000 ' invsq fsum .
+: id ;
+1 10 ' id fprod .
+\ exec, and built-ins as functions
+' sin 0 swap exec .
+0 1 ' exp integrate 1 exp 1 - - abs 1e-12 < .
+\ errors: wrong arity, bad token, undefined name
+0 1 ' drop integrate
+0 1 ' dup integrate
+0 1 42.5 integrate
+0 1 ' nosuch integrate
+' if
+\ an error inside the function unwinds everything
+: bad 0 / ;
+7 0 1 ' bad integrate .s
+\ tolerance
+5 tol
+0 tol
+1e-4 tol 0 1 ' exp integrate 1 exp 1 - - abs 1e-3 < .
+nevals 0 > .
+internals
+\ functions may use registers: integrate x*R0
+: scaled 0 regidx rcl * ;
+0 regidx 3 sto drop
+0 1 ' scaled integrate .

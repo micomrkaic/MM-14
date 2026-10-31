@@ -1,0 +1,13 @@
+all
+pi 2 / sin . 0 cos .
+deg 30 sin . 180 sin . 90 cos . 45 tan . 360 cos . -90 sin .
+90 tan
+1 atan . 0.5 asin . 1 1 atan2 .
+4 3 >p . .
+2 30 swap >r . .
+rad 180 >rad . pi >deg .
+grad 100 sin . 1 atan .
+rad 3 4 hypot .
+1.5 >hms . 1.3 >h .
+2 asin
+42 seed rand 42 seed rand == .

@@ -1,0 +1,23 @@
+\ MM-14 1.x spellings keep working: upper-case control words and control
+\ flow outside definitions. The whole rest of the line runs as one unit.
+: count10 10 0 DO I . LOOP ;
+count10
+3 0 DO I LOOP .s clst
+0 IF 5 THEN depth .
+1 IF 7 THEN .
+0 IF 1 ELSE 2 THEN .
+: nest 1 IF 0 IF 11 ELSE 22 THEN 33 ELSE 44 THEN ;
+nest .s clst
+: ml DO I sin . LOOP ;
+3 0 ml
+\ an error inside top-level control flow rolls the whole line back
+1 2 3 0 do i 0 / loop
+.s clst
+\ unterminated control at top level is a compile error, nothing runs
+5 if 1 2 3
+.s
+\ mixed case works too
+2 0 Do I Loop .s clst
+\ control words cannot be redefined under either spelling
+: DO 1 ;
+: Loop 1 ;

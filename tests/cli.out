@@ -1,0 +1,15 @@
+7.000000
+[exit 0]
+7.000000
+[exit 0]
+343.000000
+[exit 0]
+Error: Division by zero
+1.000000
+0.000000
+[exit 1]
+Error: Unterminated definition of open
+[exit 1]
+Error: Cannot open /nonexistent/file: No such file or directory
+[exit 1]
+[exit 2]

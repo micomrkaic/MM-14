@@ -1,0 +1,22 @@
+Error: Division by zero
+5
+0
+Error: Division by zero
+1
+0
+Error: sqrt: invalid argument
+Error: ln: invalid argument
+Error: ln: result is infinite
+Error: Number out of range: 1e999
+Error: Unknown word: nan
+Error: Unknown word: foo
+Error: drop: needs 1 argument on the stack
+  (empty)
+Error: ';' without ':'
+1
+2
+3
+1
+2
+3
+[exit 1]

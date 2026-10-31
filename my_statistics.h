@@ -17,11 +17,18 @@
 #ifndef MY_STATISTICS_H
 #define MY_STATISTICS_H
 
-#include "globals.h"
+#include "state.h"
 
-void sigma_clear(void);
-double sigma_plus(double x, double y);
-double sigma_minus(double x, double y);
-void sigma_evaluate(void);
+/* Everything derivable from the accumulators. NaN where undefined. */
+typedef struct {
+  double n, sx, sx2, sy, sy2, sxy;   /* HP-style sums */
+  double mx, my, sdx, sdy, r;        /* means, sample std devs, correlation */
+  double a, b;                       /* regression y = a + b x */
+} SigmaOut;
 
-#endif // MY_STATISTICS_H
+void sigma_clear(Sigma *g);
+void sigma_add(Sigma *g, double x, double y);
+int  sigma_remove(Sigma *g, double x, double y);   /* RPN_ERR if n == 0 */
+void sigma_derive(const Sigma *g, SigmaOut *o);
+
+#endif

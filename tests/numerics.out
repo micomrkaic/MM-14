@@ -1,0 +1,56 @@
+2.66666666666667
+2
+1.71828182845905
+2
+-2.66666666666667
+0
+1
+1.4142135623731
+1.41421356235623
+-1.41421356235623
+2.33333333333333
+1
+1
+1
+1.64393456668156
+3628800
+0
+1
+Error: drop must leave exactly one result (x -- f(x)); it left 0
+Error: dup must leave exactly one result (x -- f(x)); it left 2
+Error: 42.5 is not an execution token (use ' name)
+Error: ' of undefined word 'nosuch'
+Error: ' of undefined word 'if'
+Error: Division by zero
+Error:   while evaluating bad at x = 0.5
+Error: tol: tolerance must be between 0 and 1
+Error: tol: tolerance must be between 0 and 1
+1
+1
+  display     ALL, 6 digits
+  angle mode  RAD
+  register    R0 selected
+  tol         0.0001   (integrate, fzero, solve, minimize)
+  nevals      15  (function evaluations in the last numerical call)
+  stack       18 of 256 levels; undo 64 of 64
+  words       9 defined
+1.50000000000005
+1.41421356237314
+0
+1
+85
+0
+1
+84
+0
+1
+42.5
+0
+1
+7
+0
+1
+186
+5
+0
+[exit 1]

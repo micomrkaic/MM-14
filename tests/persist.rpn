@@ -1,0 +1,12 @@
+\ save/load round trip (the test runner points XDG_CONFIG_HOME at a temp dir)
+all
+: sooner 40 ;
+: later sooner 1 + ;
+\ move 'sooner' after 'later' so the saved file has a forward reference
+0 delword
+: sooner 41 ;
+listwords
+savewords clearwords listwords
+loadwords listwords later .
+5 regidx 3.25 sto drop 9 regidx 7 sto drop
+saveregs clrg listregs loadregs listregs

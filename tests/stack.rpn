@@ -1,0 +1,20 @@
+all
+1 2 3 rot .s clst
+1 2 3 -rot .s clst
+1 2 over .s clst
+1 2 nip .s clst
+1 2 tuck .s clst
+1 2 3 4 2 pick .s clst
+1 2 3 4 3 roll .s clst
+1 2 3 4 0 roll .s clst
+1 2 3 depth .s clst
+1 2 2dup .s clst
+1 2 3 2drop .s clst
+1 2 clx .s clst
+1 2 swap .s clst
+5 dup .s clst
+1 2 4 pick
+1 2 -1 roll
+1.5 pick
+.s clst
+3 4 + lstx lsty .s clst

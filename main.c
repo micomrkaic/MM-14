@@ -16,83 +16,170 @@
  */
 /* Mico's simple RPN Calculator -- MM-14
 
-   Still to do as of May 20, 2025
-   
-   for MM-14
-   . nicer and more organized help screen
-   . documentation -- README.md file etc.
-
-   for MM-15
-   . run, load and save programs
-   . complex number support (for mm-15)
-   . matrices
-   . checks if any terms words; definition are undefined
-
-   for MM-48
-   0. recursive descent parser
-   1. simple plotting inside the terminal??
-   2. symbolic stuff
-   3. strings
-   4. lists
-   5. units and constants
-   6. printing and prompting commands
+   Still to do (for later calculators)
+   MM-15: complex numbers, matrices, numerical integration and zero finding
+   MM-48: terminal plotting, symbolic algebra, strings, lists, units
 */
 
-#define _POSIX_C_SOURCE 200809L
-
+#include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <math.h>
-#include <stdbool.h>
-#include <string.h>
+#include <time.h>
+#include <unistd.h>
 #include <readline/readline.h>
 #include <readline/history.h>
-#include "globals.h"
-#include "stack.h"
-#include "my_math.h"
-#include "stack_printing.h"
-#include "my_statistics.h"
-#include "words.h"
-#include "help_functions.h"
-#include "registers.h"
-#include "util_func.h"
-#include "tab_complete.h"
-#include "tokenizer.h"
-#include "interpreter.h"
 
-int main() {
-  Stack stack;
-  Stack old_stack;
-  char* input = NULL;
+#include "state.h"
+#include "interp.h"
+#include "my_math.h"
+#include "registers.h"
+#include "words.h"
+#include "stack_printing.h"
+#include "help_functions.h"
+#include "tab_complete.h"
+#include "util_func.h"
+
+#define HISTORY_LINES 1000
+
+static void on_sigint(int sig) {
+  (void)sig;
+  interrupted = 1;
+}
+
+static void install_sigint(void) {
+  struct sigaction sa;
+  memset(&sa, 0, sizeof sa);
+  sa.sa_handler = on_sigint;
+  sigemptyset(&sa.sa_mask);
+  sigaction(SIGINT, &sa, NULL);
+}
+
+static void usage(FILE *f) {
+  fprintf(f,
+    "usage: mm_14 [-n] [-e EXPR]... [-f FILE]...\n"
+    "       mm_14 --commands | --version | -h\n"
+    "\n"
+    "  (no args)   interactive calculator (reads stdin when it is not a terminal)\n"
+    "  -e EXPR     evaluate EXPR; may be repeated\n"
+    "  -f FILE     run the lines of FILE; may be repeated\n"
+    "  -n          do not autoload saved words and registers\n"
+    "  --commands  print the command reference as Markdown\n"
+    "\n"
+    "Non-interactive runs print the final stack, one value per line, and exit\n"
+    "with status 1 if any error occurred.\n");
+}
+
+static void run_line(Interp *in, State *s, const char *text) {
+  char *copy = strdup(text);
+  if (!copy) { rpn_err("Out of memory"); return; }
+  interrupted = 0;
+  interp_line(in, s, copy);
+  free(copy);
+}
+
+static int run_file(Interp *in, State *s, FILE *f) {
+  char *line = NULL;
+  size_t cap = 0;
+  while (!cfg.quit && getline(&line, &cap, f) != -1) {
+    interrupted = 0;
+    interp_line(in, s, line);
+  }
+  free(line);
+  return RPN_OK;
+}
+
+static void history_path(char *out, size_t n) {
+  if (config_path("history", out, n, true) != RPN_OK) out[0] = '\0';
+}
+
+static void interactive(Interp *in, State *s) {
+  char hist[1200];
+  int errs_before = error_count;
+  history_path(hist, sizeof hist);
+  error_count = errs_before;          /* a missing config dir is not worth an error */
+  stifle_history(HISTORY_LINES);
+  if (hist[0]) read_history(hist);
+  completion_init();
 
   splash_screen();
-  rl_attempted_completion_function = rpn_completion;
+  print_stack(s);
 
-  initStack(&stack);
-  copyStack(&old_stack, &stack);
+  char *input;
+  while (!cfg.quit && (input = readline(interp_pending(in) ? "... " : "> "))) {
+    if (*input) {
+      add_history(input);
+      interrupted = 0;
+      interp_line(in, s, input);
+    }
+    free(input);
+    if (!interp_pending(in) && !cfg.quit) print_stack(s);
+  }
+  if (!cfg.quit) putchar('\n');     /* Ctrl-D leaves the cursor on the prompt line */
+  interp_finish(in);
+  if (hist[0]) write_history(hist);
+  printf("Goodbye!\n");
+}
 
-  load_words_from_file();
-  intg_function = 5;
-    
-  // Main REPL loop
-  while ((input = readline("> "))) {
-    if (!input || strlen(input) == 0) {
-      printStack(&stack, precision,"Stack");
-      free(input);
+int main(int argc, char **argv) {
+  enum { MAXJOBS = 128 };
+  struct { char kind; const char *arg; } jobs[MAXJOBS];
+  int njobs = 0;
+  bool autoload = true;
+
+  for (int i = 1; i < argc; i++) {
+    const char *a = argv[i];
+    if (!strcmp(a, "-h") || !strcmp(a, "--help")) { usage(stdout); return 0; }
+    if (!strcmp(a, "--version")) { printf("MM-14 %s\n", MM14_VERSION); return 0; }
+    if (!strcmp(a, "--commands")) { print_commands_markdown(); return 0; }
+    if (!strcmp(a, "-n")) { autoload = false; continue; }
+    if ((!strcmp(a, "-e") || !strcmp(a, "-f")) && i + 1 < argc && njobs < MAXJOBS) {
+      jobs[njobs].kind = a[1];
+      jobs[njobs].arg = argv[++i];
+      njobs++;
       continue;
     }
-    if (*input) add_history(input);
-
-    evaluate_input(input, &stack, &old_stack);
-    printStack(&stack, precision,"Stack");
-    free(input);
-    if (terminate_program) goto nice_exit;
+    usage(stderr);
+    return 2;
   }
 
- nice_exit:
-  clear_history();  // frees history list memory
-  printf("Goodbye!\n");
-  return 0;
+  State s;
+  state_init(&s);
+  Interp in;
+  interp_init(&in);
+  rng_seed_u64((unsigned long long)time(NULL) ^ ((unsigned long long)getpid() << 32));
+  install_sigint();
+
+  cfg.interactive = (njobs == 0 && isatty(STDIN_FILENO));
+
+  if (autoload) {
+    load_words(true);
+    reg_load(&s, true);
+  }
+
+  if (cfg.interactive) {
+    interactive(&in, &s);
+  } else {
+    if (njobs == 0) {
+      run_file(&in, &s, stdin);
+    } else {
+      for (int j = 0; j < njobs && !cfg.quit; j++) {
+        if (jobs[j].kind == 'e') {
+          run_line(&in, &s, jobs[j].arg);
+        } else {
+          FILE *f = strcmp(jobs[j].arg, "-") ? fopen(jobs[j].arg, "r") : stdin;
+          if (!f) { rpn_err("Cannot open %s: %s", jobs[j].arg, strerror(errno)); continue; }
+          run_file(&in, &s, f);
+          if (f != stdin) fclose(f);
+        }
+      }
+    }
+    interp_finish(&in);
+    print_stack_plain(&s);
+  }
+
+  interp_free(&in);
+  free_words();
+  return (!cfg.interactive && error_count) ? 1 : 0;
 }

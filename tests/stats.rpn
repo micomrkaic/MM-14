@@ -1,0 +1,20 @@
+\ s+ takes x from X and y from Y (HP order)
+all
+1 2 s+ 3 5 s+ 4 4 s+ 2 7 s+
+.s clst
+mean .s clst
+sdev .s clst
+corr .
+lr .s clst
+10 yhat .
+3 xhat .
+\ remove a point and add it back: results must match
+4 4 s- drop 4 4 s+ drop
+mean .s clst
+statscalc
+clstat mean
+5 5 s+ drop sdev
+\ large offset: Welford keeps precision where the sum-of-squares formula fails
+clstat
+1e9 1e9 s+ drop 1e9 1 + 1e9 1 + s+ drop 1e9 2 + 1e9 2 + s+ drop
+sdev .s

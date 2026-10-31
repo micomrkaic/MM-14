@@ -14,50 +14,39 @@
  * You should have received a copy of the GNU General Public License
  * along with MM-14 If not, see <https://www.gnu.org/licenses/>.
  */
-#define _POSIX_C_SOURCE 200809L
-#include "tab_complete.h"
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <readline/readline.h>
+#include "tab_complete.h"
+#include "ops.h"
+#include "words.h"
 
-// Word list for TAB completion
-const char *rpn_words[] = {
-  "dup", "drop", "swap", "nip", "tuck", "roll",
-  "==", "<=", ">=", "!=", "<", ">", "&&", "||", "!",
-  "+", "-", "*", "/", "^", "pow", "abs", "inv",
-  "sin", "cos", "tan", "asin", "acos", "atan",
-  "sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
-  "log", "ln", "chs", "exp", "%", "%chg",
-  "npdf", "ncdf", "nqnt", "frac", "int","integrate","fzero",
-  "s+", "s-", "clstat", "getstats",
-  "lstx", "lsty", "stacksize", "stacksum", "stacksumsq",
-  "clst", "u", "p_prec", "q", "help", "sss", "spf", "swapterm",
-  "int_prec","f0_prec","word_sel","internals",
-  "sto", "rcl", "listregs", "clrg", "loadregs", "saveregs","regidx",
-  "sto+", "sto-", "sto*","sto/",
-  "listwords", "clearwords", "delword", "savewords", "loadwords",
-  NULL
-};
-
-static char *command_generator(const char *text, int state) {
-  static int list_index, len;
-  const char *name;
-  static char match[64];
-
-  if (!state) {
-    list_index = 0;
-    len = strlen(text);
+/* Walks ops[] first, then user words; both are live, so new words complete at once. */
+static char *generator(const char *text, int state) {
+  static int i;
+  static size_t len;
+  if (!state) { i = 0; len = strlen(text); }
+  while (i < n_ops) {
+    const char *name = ops[i++].name;
+    if (strncmp(name, text, len) == 0) return strdup(name);
   }
-
-  while ((name = rpn_words[list_index++])) {
-    if (strncmp(name, text, len) == 0) {
-      snprintf(match, sizeof(match), "%s", name);
-      return strdup(match);
-    }
+  while (i - n_ops < word_count) {
+    const char *name = words[i++ - n_ops].name;
+    if (strncmp(name, text, len) == 0) return strdup(name);
   }
   return NULL;
 }
 
-char **rpn_completion(const char *text, int start, int end) {
+static char **completion(const char *text, int start, int end) {
   (void)start;
   (void)end;
-  return rl_completion_matches(text, command_generator);
+  rl_attempted_completion_over = 1;   /* never fall back to file names */
+  return rl_completion_matches(text, generator);
+}
+
+void completion_init(void) {
+  /* Only whitespace separates tokens; the default set would split "%chg", ">deg", "||". */
+  rl_basic_word_break_characters = " \t\n";
+  rl_attempted_completion_function = completion;
 }

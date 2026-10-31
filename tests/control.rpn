@@ -1,0 +1,35 @@
+all
+: abs2 dup 0 < if chs then ;
+-5 abs2 . 5 abs2 .
+: sgn dup 0 > if drop 1 else 0 < if -1 else 0 then then ;
+-3 sgn . 0 sgn . 8 sgn .
+: fac dup 1 > if dup 1 - fac * then ;
+10 fac .
+: sum ( n -- 1+..+n ) 0 swap 1 + 1 do i + loop ;
+100 sum .
+: grid 3 0 do 2 0 do j 10 * i + loop loop ;
+grid .s clst
+: down 0 10 do i -3 +loop ;
+down .s clst
+: empty 5 5 do 99 loop ;
+empty depth .
+: dbl 1 begin dup 100 < while 2 * repeat ;
+dbl .
+: cnt 0 begin 1 + dup 5 >= until ;
+cnt .
+\ compile-time checks
+: e1 if 1 ;
+: e2 1 then ;
+: e3 i ;
+: e4 1 0 do j loop ;
+: e5 begin 1 repeat ;
+: e6 loop ;
+\ runtime check: missing flag rolls the whole word back
+: e7 if 1 then ;
+7 clst e7
+.s
+\ control words are not valid at top level
+1 if
+\ an error inside a word undoes everything the word did
+: partial 1 2 3 0 / ;
+clst partial .s

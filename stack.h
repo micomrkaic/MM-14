@@ -17,34 +17,15 @@
 #ifndef STACK_H
 #define STACK_H
 
-// **** Stack structure ****
-#define MAX_STACK 1024
+#include "state.h"
 
-typedef struct {
-  double data[MAX_STACK];
-  int top;
-} Stack;
+static inline int stack_depth(const Stack *s) { return s->top + 1; }
 
-// Stack functions
-void initStack(Stack* s);
-int isEmpty(Stack* s);
-int isFull(Stack* s);
-void push(Stack* s, double value);
-double pop(Stack* s);
+/* Returns RPN_OK, or RPN_ERR on overflow (stack unchanged). */
+int push(Stack *s, double v);
+/* Caller guarantees depth >= 1 (the dispatcher checks arity). */
+double pop(Stack *s);
+/* d = 0 is the top (X), 1 is Y, ... Caller guarantees d < depth. */
+double peek(const Stack *s, int d);
 
-
-// Copy stack state
-void copyStack(Stack* dest, Stack* src);
-
-// Stack operations
-void stack_roll(Stack* s);
-void stack_nip(Stack* s);
-void stack_tuck(Stack* s);
-void stack_dup(Stack* s);
-void stack_swap(Stack* s);
-void stack_drop(Stack* s);
-void stack_count(Stack* s);
-void stack_sum(Stack* s);
-void stack_sum_squares(Stack* s);
-
-#endif // STACK_H
+#endif
